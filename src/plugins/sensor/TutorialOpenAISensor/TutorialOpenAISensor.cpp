@@ -36,6 +36,8 @@
 #include <scrimmage/common/Keys.h>
 #include <scrimmage/proto/ExternalControl.pb.h>
 
+#include <boost/optional.hpp>
+
 #include <scrimmage/plugins/sensor/TutorialOpenAISensor/TutorialOpenAISensor.h>
 #include <boost/optional.hpp>
 
