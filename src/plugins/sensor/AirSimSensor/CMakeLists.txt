@@ -1,4 +1,4 @@
-if (NOT OPENCV_FOUND)
+if (OpenCV_FOUND)
   return()
 endif()
 
