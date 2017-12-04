@@ -61,10 +61,11 @@ class ScrimmageEnv(gym.Env):
 
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, enable_gui, mission_file,
+    def __init__(self, enable_gui, index, mission_file,
                  address="localhost:50051", gdb_args=""):
         """Create queues for multi-threading."""
         self.enable_gui = enable_gui
+        self.index = index
         self.mission_file = mission_file
         self.address = address
         self.gdb_args = gdb_args
@@ -170,6 +171,15 @@ class ScrimmageEnv(gym.Env):
         run_node.attrib['enable_gui'] = str(enable_gui)
         if not bool(enable_gui):
             run_node.attrib['time_warp'] = "0"
+
+        # need to deconflict airsim ports
+        for entity_node in root.findall('entity'):
+            for sensor_node in entity_node.findall('sensor'):
+                sensor_node.attrib['airsim_index'] = str(self.index)
+
+        index_node = ET.Element("index")
+        index_node.text = str(self.index)
+        root.append(index_node)
         
         # logging
         log_node = root.find('log_dir')

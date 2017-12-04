@@ -71,7 +71,11 @@ AirSimSensor::AirSimSensor() : client_connected_(false),
 
 void AirSimSensor::init(std::map<std::string, std::string> &params) {
     airsim_ip_ = sc::get<std::string>("airsim_ip", params, "localhost");
-    airsim_port_ = sc::get<int>("airsim_port", params, 41451);
+    int airsim_base_port = sc::get<int>("airsim_base_port", params, 41450);
+    // build current port from index, this allows talking to multiple instances
+    // of AirSim, note we mul by 100 since consecutive ports are reserved for multiple
+    // interfaces to the same AirSim instance.
+    airsim_port_ = 100*sc::get<int>("airsim_index", params, 1) + airsim_base_port;
     airsim_timeout_ms_ = sc::get<int>("airsim_timeout_ms", params, 60000);
 
     enu_to_ned_yaw_.set_input_clock_direction(ang::Rotate::CCW);
