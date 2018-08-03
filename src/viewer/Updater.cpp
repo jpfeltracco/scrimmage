@@ -419,6 +419,18 @@ bool Updater::draw_shapes(scrimmage_proto::Shapes &shapes) {
         case sp::Shape::kText:
             shape_status = draw_text(new_shape, shape.text(), actor, source, mapper);
             break;
+        case sp::Shape::kMesh:
+            {
+                bool new_model_name = false;
+                if (!new_shape) {
+                    // force full reload of shape if mesh name changed
+                    auto old_mesh = std::get<0>(shapes_[shape.hash()]).mesh();
+                    new_model_name = old_mesh.name() != shape.mesh().name();
+                }
+                shape_status = draw_mesh(new_shape, new_model_name, shape.mesh(),
+                                         actor, source, mapper);
+            }
+            break;
         default:
             break;
         }
@@ -1902,6 +1914,110 @@ bool Updater::draw_text(const bool &new_shape,
     textSource->SetText(t.text().c_str());
     actor->SetPosition(t.center().x(), t.center().y(),
                        t.center().z());
+    return true;
+}
+
+void Updater::get_model_texture(std::string name,
+                                std::string& model_file, bool& model_found,
+                                std::string& texture_file, bool& texture_found) {
+    ConfigParse c_parse;
+    FileSearch file_search;
+    std::map<std::string, std::string> overrides;
+
+    model_found = false;
+    texture_found = false;
+
+    if (c_parse.parse(overrides, name, "SCRIMMAGE_DATA_PATH", file_search)) {
+        model_file = c_parse.directory() + "/" + c_parse.params()["model"];
+        texture_file = c_parse.directory() + "/" + c_parse.params()["texture"];
+
+        model_found = fs::exists(model_file) && fs::is_regular_file(model_file);
+        texture_found = fs::exists(texture_file) && fs::is_regular_file(texture_file);
+    }
+}
+
+bool Updater::draw_mesh(const bool &new_shape,
+                        const bool &new_model_name,
+                        const scrimmage_proto::Mesh &m,
+                        vtkSmartPointer<vtkActor> &actor,
+                        vtkSmartPointer<vtkPolyDataAlgorithm> &source,
+                        vtkSmartPointer<vtkPolyDataMapper> &mapper) {
+    vtkSmartPointer<vtkTransformPolyDataFilter> transformFilter;
+    if (new_shape) {
+        transformFilter = vtkSmartPointer<vtkTransformPolyDataFilter>::New();
+        source = transformFilter;
+
+
+        vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
+        transform->RotateWXYZ(m.quat().w(), m.quat().x(), m.quat().y(), m.quat().z());
+
+        transformFilter->SetTransform(transform);
+
+        mapper->SetInputConnection(transformFilter->GetOutputPort());
+
+        actor->SetMapper(mapper);
+
+    } else {
+        transformFilter = vtkTransformPolyDataFilter::SafeDownCast(source);
+    }
+
+    if (new_shape || new_model_name) {
+        // get transformFilter hooked up to texture and model
+        std::string texture_file = "";
+        bool texture_file_found = false;
+        std::string model_file = "";
+        bool model_file_found = false;
+
+        get_model_texture(m.name(),
+                          model_file, model_file_found,
+                          texture_file, texture_file_found);
+
+        if (!model_file_found) {
+            std::cout << "Updater: Couldn't find model for "
+                      << m.name() << std::endl;
+            return false;
+        }
+
+        if (texture_file_found) {
+            vtkSmartPointer<vtkPNGReader> pngReader =
+                vtkSmartPointer<vtkPNGReader>::New();
+            pngReader->SetFileName(texture_file.c_str());
+            pngReader->Update();
+
+            vtkSmartPointer<vtkTexture> colorTexture =
+                vtkSmartPointer<vtkTexture>::New();
+            colorTexture->SetInputConnection(pngReader->GetOutputPort());
+            colorTexture->InterpolateOn();
+            actor->SetTexture(colorTexture);
+        }
+
+        vtkSmartPointer<vtkOBJReader> reader =
+            vtkSmartPointer<vtkOBJReader>::New();
+        reader->SetFileName(model_file.c_str());
+        reader->Update();
+
+        transformFilter->SetInputConnection(reader->GetOutputPort());
+        transformFilter->Update();
+    }
+
+    auto scale = m.scale() * scale_;
+    actor->SetScale(scale, scale, scale);
+    actor->SetPosition(m.center().x(), m.center().y(), m.center().z());
+
+    vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
+
+    Quaternion q(m.quat().w(), m.quat().x(), m.quat().y(), m.quat().z());
+
+    auto deg_per_rad = 180.0f / M_PI;
+
+    // don't use RotateWXYZ since W corresponds to angle in VTK transforms
+    transform->RotateX(deg_per_rad * q.roll());
+    transform->RotateY(deg_per_rad * q.pitch());
+    transform->RotateZ(deg_per_rad * q.yaw());
+
+    transformFilter->SetTransform(transform);
+    transformFilter->Update();
+
     return true;
 }
 } // namespace scrimmage
