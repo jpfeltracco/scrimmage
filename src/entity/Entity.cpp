@@ -224,6 +224,9 @@ bool Entity::init(AttributeMap &overrides,
             param_override_func(config_parse.params());
             sensor->init(config_parse.params());
             sensors_[sensor_name + std::to_string(sensor_ct)] = sensor;
+        } else {
+            std::cout << "Failed to open sensor plugin: " << sensor_name
+                      << ", PluginStatus<Sensor>: " << status.status << std::endl;
         }
         sensor_order_name = std::string("sensor") + std::to_string(++sensor_ct);
     }
