@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="http://gtri.gatech.edu"?>
+<params>
+  <library>MapTextureRender_plugin</library>
+  <lat>34.458893</lat>
+  <lon>-84.180125</lon>
+  <z>0</z>
+
+  <!-- Zoom level is standardized among map viewers -->
+  <!-- https://wiki.openstreetmap.org/wiki/Zoom_levels -->
+  <zoom_level>14</zoom_level>
+
+  <texture_xml>mcmillan.xml</texture_xml>
+  <width_px>2837</width_px>
+  <height_px>3330</height_px>
+</params>

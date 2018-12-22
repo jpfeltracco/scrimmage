@@ -1,7 +1,7 @@
 #--------------------------------------------------------
 # Library Creation
 #--------------------------------------------------------
-set(LIBRARY_NAME MapRender_plugin)
+set(LIBRARY_NAME MapTextureRender_plugin)
 set(LIB_MAJOR 0)
 set(LIB_MINOR 0)
 set(LIB_RELEASE 1)

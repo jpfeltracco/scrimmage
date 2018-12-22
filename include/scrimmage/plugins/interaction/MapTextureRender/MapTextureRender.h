@@ -43,9 +43,9 @@
 namespace scrimmage {
 namespace interaction {
 
-class MapRender : public scrimmage::EntityInteraction {
+class MapTextureRender : public scrimmage::EntityInteraction {
  public:
-    MapRender();
+    MapTextureRender();
     bool init(std::map<std::string, std::string> &mission_params,
               std::map<std::string, std::string> &plugin_params) override;
     bool step_entity_interaction(std::list<scrimmage::EntityPtr> &ents,
